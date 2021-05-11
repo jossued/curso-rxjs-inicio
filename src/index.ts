@@ -1,4 +1,4 @@
-import {Observable, Observer, Subscriber} from 'rxjs';
+import {Observable, Observer, Subject, Subscriber} from 'rxjs';
 
 const observer: Observer<any> = {
     next: valor => console.log(valor),
@@ -7,37 +7,28 @@ const observer: Observer<any> = {
 }
 
 const intervalo$ = new Observable<number>(
-    // se crea un contador 1 2 3... 
-    subscriber => {
-        let i = 0;
-        
-        const intervalo = setInterval (
+    subs => {
+        const intervalID = setInterval(
             () => {
-                i ++;
-                subscriber.next(i);
-            }, 1000
+                subs.next( Math.random() )
+            }, 3000
         );
 
-        setInterval (
-            () => {
-                subscriber.complete();
-            }, 4000
-        );
-
-        return () => {
-            clearInterval(intervalo);
-            console.log('Intervalo destruido');
-        }
+        return () => clearInterval(intervalID);
     }
 )
+/*
+    1. Casteo multiple
+    2. También es un observer
+    3. Next, error y complete
+*/
 
-const subscription = intervalo$.subscribe( observer);
-const subscription2 = intervalo$.subscribe( observer);
+const subject$ = new Subject();
 
-subscription.add (subscription2);
+intervalo$.subscribe(subject$);
 
-setTimeout(
-    () => {
-        subscription.unsubscribe()
-    }, 4000 
-)
+// const subs1 = intervalo$.subscribe ( rnd => console.log('subs1', rnd))
+// const subs2 = intervalo$.subscribe ( rnd => console.log('subs2', rnd))
+
+const subs1 = subject$.subscribe ( rnd => console.log('subs1', rnd))
+const subs2 = subject$.subscribe ( rnd => console.log('subs2', rnd))
