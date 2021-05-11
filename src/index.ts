@@ -1,23 +1,25 @@
-import { interval, timer} from 'rxjs';
+import { range, Observer, fromEvent } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-const observer = {
-    next: (val) => {console.log(val)},
-    error: (error) => {console.error(error)},
-    complete: () => {console.log('complete')},
+const observer: Observer<any> = {
+    next: valor => console.log(valor),
+    error: error => console.error(error),
+    complete: () => console.info('completado')
 }
 
-const hoyEn5 = new Date(); // ahora
-hoyEn5.setSeconds(hoyEn5.getSeconds() + 5);
+const subs$ = 
+    range(1,5)
+    .pipe(
+        // map recibe y devuelve un valor
+        map<number,string>( // tipar el map
+            (valor) => {
+                return (valor*10).toString();
+            }
+        )
+    );
 
-const interval$ = interval(1000); // emite cada cierto tiempo
-const timer$ = timer(2000); // en un intervalo y se completa
-const timer2$ = timer(2000, 1000); // crear un interval que inicia a los 2s 
-const timerEn5$ = timer(hoyEn5); // emite un valor en 5s
+subs$.subscribe(observer);
 
-console.log('inicio');
-interval$.subscribe(observer); // 0 a infinito
-timer$.subscribe(observer); // 0 a complete
-timer2$.subscribe(observer); // 0 a infinito
-timerEn5$.subscribe(observer); // 0 despues de 5 (como una alerta)
-console.log('fin'); // el interval es asíncrono
+const keyup$ = fromEvent<KeyboardEvent>(document, 'keyup');
 
+keyup$.subscribe(val => console.log(val.code));
