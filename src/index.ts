@@ -1,22 +1,51 @@
-import { Observer, of } from "rxjs";
-import { ajax, AjaxError } from "rxjs/ajax";
-import { catchError, map } from "rxjs/operators";
+import { fromEvent, Observable, Observer, of } from "rxjs";
+import { ajax } from "rxjs/ajax";
+import { debounceTime, map, mergeAll, pluck } from "rxjs/operators";
+import { Item } from "./interfaces/github-item.interface";
+import { GithubUsersResp } from "./interfaces/github-users.interface";
 
-const url = 'https://api.github.com/users1?per_page=5';
 const observer: Observer<any> = {
-    next: valor => console.log({valor}),
-    error: error => console.error({error}),
+    next: valor => console.log({ valor }),
+    error: error => console.error({ error }),
     complete: () => console.info('completado')
 }
 
-ajax(url)
-.pipe(
-    map(r => r.response),
-    catchError(
-        (err: AjaxError) => {
-            console.warn('error en:', err.message);
-            return of({});
-        }
+const body = document.querySelector('body');
+const textInput = document.createElement('input');
+const orderList = document.createElement('ol');
+body.append(textInput, orderList);
+
+// Streams
+const input$ = fromEvent<KeyboardEvent>(textInput, 'keyup');
+
+// Helpers
+const mostrarUsuarios = (usuarios: Item[]) => {
+    for (const usuario of usuarios) {
+        const li = document.createElement('li');
+        const img = document.createElement('img');
+        img.src = usuario.avatar_url;
+
+        const anchor = document.createElement('a');
+        anchor.href = usuario.html_url;
+        anchor.text = 'ver';
+        anchor.target = '_blank';
+
+        li.append(img);
+        li.append(usuario.login);
+        li.append(anchor);
+
+        orderList.append(li);
+    }
+}
+
+input$
+    .pipe(
+        debounceTime<KeyboardEvent>(500),
+        pluck<KeyboardEvent, string>('target', 'value'),
+        map<string, Observable<GithubUsersResp>>(value => ajax.getJSON(
+            `https://api.github.com/search/users?q=${value}`)
+        ),
+        mergeAll<GithubUsersResp>(),
+        pluck<GithubUsersResp, Item[]>('items')
     )
-)
-.subscribe(observer);
+    .subscribe(mostrarUsuarios);
