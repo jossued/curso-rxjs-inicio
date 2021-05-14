@@ -15,7 +15,7 @@ document.querySelector('body').append(boton);
 const counter$ = interval(1000);
 const clickBtn$ = fromEvent(boton, 'click')
     .pipe(
-        skip(1)
+        skip(1), // no emite el primero
     );
 
 counter$
